@@ -1,0 +1,18 @@
+﻿<!-- Copyright (c)  Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net46;netcoreapp1.0</TargetFrameworks>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IsPackable>true</IsPackable>
+    <NuspecFile>$(MSBuildProjectName).nuspec</NuspecFile>
+    <NuspecBasePath>$(MSBuildProjectDirectory)\tools</NuspecBasePath>
+    <NuspecProperties>version=$(Version);licenseUrl=$(PackageLicenseUrl);repoUrl=$(RepositoryUrl);copyright=$(Copyright);ArtifactsBinDir=$(ArtifactsBinDir)</NuspecProperties>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Show .*proj files in solution explorer, which are excluded by default -->
+    <None Include="tools\*.*proj" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(RepoRoot)src\BuildTasks\RoslynTools.BuildTasks.csproj" />
+  </ItemGroup>
+</Project>

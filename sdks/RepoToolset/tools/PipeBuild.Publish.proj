@@ -1,0 +1,29 @@
+<!-- Copyright (c)  Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project DefaultTargets="Publish">
+  <!--
+    Required variables:
+      VersionsPropsPath          Versions.props path. 
+      FixedVersionsPropsPath     FixedVersions.props path. 
+      ExpectedFeedUrl            Target feed URL.
+      AccountKey                 Account key.
+  -->
+
+  <Import Project="BuildStep.props" />
+
+  <Import Project="$(NuGetPackageRoot)microsoft.dotnet.build.tasks.feed\$(MicrosoftDotNetBuildTasksFeedVersion)\build\Microsoft.DotNet.Build.Tasks.Feed.targets" />
+
+  <ItemGroup>
+    <ItemsToPush Include="$(PackageOutputPath)*.nupkg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ItemsToPush Include="$(MSBuildThisFileDirectory)artifacts\**\*.nupkg" />
+  </ItemGroup>
+
+  <Target Name="Publish">
+    <PushToBlobFeed ExpectedFeedUrl="$(ExpectedFeedUrl)"
+                    AccountKey="$(AccountKey)"
+                    ItemsToPush="@(ItemsToPush)" />
+  </Target>
+
+</Project>
