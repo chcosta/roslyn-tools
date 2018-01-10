@@ -3,6 +3,8 @@ Param(
   [string] $configuration = "Debug",
   [string] $solution = "",
   [string] $verbosity = "minimal",
+  [string] $dotnetcliversion = "",
+  [string] $toolsetversion = "",
   [switch] $restore,
   [switch] $build,
   [switch] $rebuild,
@@ -40,6 +42,8 @@ function Print-Usage() {
     Write-Host "  -ci                     Set when running on CI server"
     Write-Host "  -log                    Enable logging (by default on CI)"
     Write-Host "  -prepareMachine         Prepare machine for CI run"
+    Write-Host "  -dotnetcliversion <value> Specify cli version to restore (defaults to value specified in ToolsetVersion.props)"
+    Write-Host "  -toolsetversion <value> Specify Repo Toolset version to restore (defaults to value specified in ToolsetVersion.props)"
     Write-Host ""
     Write-Host "Command line arguments not listed above are passed thru to msbuild."
     Write-Host "The above arguments can be shortened as much as to be unambiguous (e.g. -co for configuration, -t for test, etc.)."
@@ -63,13 +67,18 @@ function GetVersion([string] $name) {
     }
   }
 
-  throw "Failed to find $name in Versions.props"
+  throw "Failed to find $name in $VersionsXml"
 }
 
 function InstallDotNetCli {
   
   Create-Directory $DotNetRoot
-  $dotnetCliVersion = GetVersion("DotNetCliVersion")
+  if ( $dotnetCliVersion -eq "") {
+    $dotnetCliVersion = GetVersion("DotNetCliVersion")
+  }
+  else {
+    Write-Host "Using explicitly specified dotnet cli version '$dotnetCliVersion'"
+  }
 
   $installScript = "$DotNetRoot\dotnet-install.ps1"
   if (!(Test-Path $installScript)) { 
@@ -84,7 +93,7 @@ function InstallDotNetCli {
 
 function InstallToolset {
   if (!(Test-Path $ToolsetBuildProj)) {
-    & $DotNetExe msbuild $ToolsetRestoreProj /t:restore /m /nologo /clp:Summary /warnaserror /v:$verbosity /p:NuGetPackageRoot=$NuGetPackageRoot /p:BaseIntermediateOutputPath=$ToolsetDir /p:ExcludeRestorePackageImports=true
+    & $DotNetExe msbuild $ToolsetRestoreProj /t:restore /m /nologo /clp:Summary /warnaserror /v:$verbosity /p:RestorePackagesPath=$NuGetPackageRoot /p:NuGetPackageRoot=$NuGetPackageRoot /p:BaseIntermediateOutputPath=$ToolsetDir /p:ExcludeRestorePackageImports=true
   }
 }
 
@@ -105,6 +114,22 @@ function Stop-Processes() {
   Get-Process -Name "vbcscompiler" -ErrorAction SilentlyContinue | Stop-Process
 }
 
+function Find-File([string] $directory, [string] $filename) {
+  if ($directory -eq "") {
+    Write-Host "Error: Cannot find file '$filename' in any parent directories"
+    exit 1
+  }
+
+  $file = Join-Path $directory $filename
+  Write-Host "Looking for file, '$filename' in '$directory'"
+  if (Test-Path $file) {
+    return $file
+  }
+  $directory = Split-Path -Path $directory -Parent
+  return Find-File $directory $filename
+}
+
+
 try {
 
   $RepoRoot = Join-Path $PSScriptRoot "..\"
@@ -116,7 +141,7 @@ try {
   $ToolsetDir = Join-Path $ArtifactsDir "toolset"
   $LogDir = Join-Path (Join-Path $ArtifactsDir $configuration) "log"
   $TempDir = Join-Path (Join-Path $ArtifactsDir $configuration) "tmp"
-  [xml]$VersionsXml = Get-Content(Join-Path $PSScriptRoot "Versions.props")
+  [xml]$VersionsXml = Get-Content(Find-File $PSScriptRoot "ToolsetVersions.props")
 
   if ($solution -eq "") {
     $solution = @(gci(Join-Path $RepoRoot "*.sln"))[0]
@@ -125,17 +150,23 @@ try {
   if ($env:NUGET_PACKAGES -ne $null) {
     $NuGetPackageRoot = $env:NUGET_PACKAGES.TrimEnd("\") + "\"
   } else {
-    $NuGetPackageRoot = Join-Path $env:UserProfile ".nuget\packages\"
+    $NuGetPackageRoot = Join-Path $PSScriptRoot "packages"
   }
-
-  $ToolsetVersion = GetVersion("RoslynToolsRepoToolsetVersion")
-  $ToolsetBuildProj = Join-Path $NuGetPackageRoot "roslyntools.repotoolset\$ToolsetVersion\tools\Build.proj"
 
   if ($ci) {
     Create-Directory $TempDir
     $env:TEMP = $TempDir
     $env:TMP = $TempDir
   }
+ 
+  if ( $ToolsetVersion -eq "" ) {
+    $ToolsetVersion = GetVersion("RoslynToolsRepoToolsetVersion")
+  }
+  else {
+    Write-Host "Using explicitly specified toolset version '$ToolsetVersion'"
+  }
+
+  $ToolsetBuildProj = Join-Path $NuGetPackageRoot "roslyntools.repotoolset\$ToolsetVersion\tools\Build.proj"
 
   if ($restore) {
     InstallDotNetCli
