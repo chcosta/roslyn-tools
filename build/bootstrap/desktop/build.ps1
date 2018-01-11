@@ -5,6 +5,10 @@ Param(
   [string] $verbosity = "minimal",
   [string] $dotnetcliversion = "",
   [string] $toolsetversion = "",
+  [string] $packagename = "",
+  [string] $packageversion = "",
+  [string] $packagesource = "",
+  [switch] $addpackage,
   [switch] $restore,
   [switch] $build,
   [switch] $rebuild,
@@ -35,6 +39,7 @@ function Print-Usage() {
     Write-Host "  -test                   Run all unit tests in the solution"
     Write-Host "  -sign                   Sign build outputs"
     Write-Host "  -pack                   Package build outputs into NuGet packages and Willow components"
+    Write-Host "  -addpackage             Add a package to the repo toolset project"
     Write-Host ""
 
     Write-Host "Advanced settings:"
@@ -44,6 +49,12 @@ function Print-Usage() {
     Write-Host "  -prepareMachine         Prepare machine for CI run"
     Write-Host "  -dotnetcliversion <value> Specify cli version to restore (defaults to value specified in ToolsetVersion.props)"
     Write-Host "  -toolsetversion <value> Specify Repo Toolset version to restore (defaults to value specified in ToolsetVersion.props)"
+    Write-Host ""
+    Write-Host "-AddPackage arguments:"
+    Write-Host "  -packagename <value>"
+    Write-Host "  -packageversion <value>"
+    Write-Host "AddPackage options:"
+    Write-Host "  -packagesource <value>"
     Write-Host ""
     Write-Host "Command line arguments not listed above are passed thru to msbuild."
     Write-Host "The above arguments can be shortened as much as to be unambiguous (e.g. -co for configuration, -t for test, etc.)."
@@ -91,9 +102,23 @@ function InstallDotNetCli {
   }
 }
 
+function AddPackageToToolset {
+  if ($packagename -eq "" -Or $packageversion -eq "") {
+    Write-Host "Missing required option 'packagename' or 'packageversion'"
+    exit 1
+  }
+  $restoreArgs = @()
+  if ($packagesource -ne "") {
+    $restoreArgs += "--source"
+    $restoreArgs += $packageSource
+  }
+
+  & $DotNetExe add $ToolsetRestoreProj package $packagename --version $packageversion --package-directory $NuGetPackageRoot $restoreArgs
+
+}
 function InstallToolset {
   if (!(Test-Path $ToolsetBuildProj)) {
-    & $DotNetExe msbuild $ToolsetRestoreProj /t:restore /m /nologo /clp:Summary /warnaserror /v:$verbosity /p:RestorePackagesPath=$NuGetPackageRoot /p:NuGetPackageRoot=$NuGetPackageRoot /p:BaseIntermediateOutputPath=$ToolsetDir /p:ExcludeRestorePackageImports=true
+    & $DotNetExe msbuild $ToolsetRestoreProj /t:restore /m /nologo /clp:Summary /warnaserror /v:$verbosity /p:RestorePackagesPath=$NuGetPackageRoot /p:NuGetPackageRoot=$NuGetPackageRoot /p:BaseIntermediateOutputPath=$ToolsetDir /p:ExcludeRestorePackageImports=true /p:RoslynToolsRepoToolsetVersion=$ToolsetVersion
   }
 }
 
@@ -168,6 +193,9 @@ try {
 
   $ToolsetBuildProj = Join-Path $NuGetPackageRoot "roslyntools.repotoolset\$ToolsetVersion\tools\Build.proj"
 
+  if ($addpackage) {
+    AddPackageToToolset
+  }
   if ($restore) {
     InstallDotNetCli
     InstallToolset
