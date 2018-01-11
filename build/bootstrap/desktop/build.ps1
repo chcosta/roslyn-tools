@@ -39,7 +39,7 @@ function Print-Usage() {
     Write-Host "  -test                   Run all unit tests in the solution"
     Write-Host "  -sign                   Sign build outputs"
     Write-Host "  -pack                   Package build outputs into NuGet packages and Willow components"
-    Write-Host "  -addpackage             Add a package to the repo toolset project"
+    Write-Host "  -addpackage <arguments> <options>   Add a package to the repo toolset project, see below for arguments and options"
     Write-Host ""
 
     Write-Host "Advanced settings:"
@@ -50,12 +50,14 @@ function Print-Usage() {
     Write-Host "  -dotnetcliversion <value> Specify cli version to restore (defaults to value specified in ToolsetVersion.props)"
     Write-Host "  -toolsetversion <value> Specify Repo Toolset version to restore (defaults to value specified in ToolsetVersion.props)"
     Write-Host ""
-    Write-Host "-AddPackage arguments:"
+
+    Write-Host "AddPackage arguments:"
     Write-Host "  -packagename <value>"
     Write-Host "  -packageversion <value>"
     Write-Host "AddPackage options:"
     Write-Host "  -packagesource <value>"
     Write-Host ""
+
     Write-Host "Command line arguments not listed above are passed thru to msbuild."
     Write-Host "The above arguments can be shortened as much as to be unambiguous (e.g. -co for configuration, -t for test, etc.)."
 }
@@ -166,6 +168,9 @@ try {
   $ToolsetDir = Join-Path $ArtifactsDir "toolset"
   $LogDir = Join-Path (Join-Path $ArtifactsDir $configuration) "log"
   $TempDir = Join-Path (Join-Path $ArtifactsDir $configuration) "tmp"
+  $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = "true"
+
+  # Search for the ToolsetVersions.props file in the current or any parent directory
   [xml]$VersionsXml = Get-Content(Find-File $PSScriptRoot "ToolsetVersions.props")
 
   if ($solution -eq "") {
@@ -175,7 +180,7 @@ try {
   if ($env:NUGET_PACKAGES -ne $null) {
     $NuGetPackageRoot = $env:NUGET_PACKAGES.TrimEnd("\") + "\"
   } else {
-    $NuGetPackageRoot = Join-Path $PSScriptRoot "packages"
+    $NuGetPackageRoot = Join-Path $RepoRoot "packages"
   }
 
   if ($ci) {
@@ -201,7 +206,9 @@ try {
     InstallToolset
   }
 
-  Build
+  if ($build) {
+    Build
+  }
   exit $lastExitCode
 }
 catch {
@@ -216,4 +223,3 @@ finally {
     Stop-Processes
   }
 }
-
