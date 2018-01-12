@@ -119,9 +119,7 @@ function AddPackageToToolset {
 
 }
 function InstallToolset {
-  if (!(Test-Path $ToolsetBuildProj)) {
-    & $DotNetExe msbuild $ToolsetRestoreProj /t:restore /m /nologo /clp:Summary /warnaserror /v:$verbosity /p:RestorePackagesPath=$NuGetPackageRoot /p:NuGetPackageRoot=$NuGetPackageRoot /p:BaseIntermediateOutputPath=$ToolsetDir /p:ExcludeRestorePackageImports=true /p:RoslynToolsRepoToolsetVersion=$ToolsetVersion
-  }
+    & $DotNetExe msbuild $ToolsetRestoreProj /t:restore /m /nologo /clp:Summary /warnaserror /v:$verbosity /p:RestorePackagesPath=$NuGetPackageRoot /p:NuGetPackageRoot=$NuGetPackageRoot /p:ExcludeRestorePackageImports=false /p:RoslynToolsRepoToolsetVersion=$ToolsetVersion
 }
 
 function Build {
@@ -163,7 +161,7 @@ try {
   $DotNetRoot = Join-Path $RepoRoot ".dotnet"
   $DotNetExe = Join-Path $DotNetRoot "dotnet.exe"
   $BuildProj = Join-Path $PSScriptRoot "build.proj"
-  $ToolsetRestoreProj = Join-Path $PSScriptRoot "Toolset.proj"
+  $ToolsetRestoreProj = Join-Path $PSScriptRoot "_Toolset.csproj"
   $ArtifactsDir = Join-Path $RepoRoot "artifacts"
   $ToolsetDir = Join-Path $ArtifactsDir "toolset"
   $LogDir = Join-Path (Join-Path $ArtifactsDir $configuration) "log"

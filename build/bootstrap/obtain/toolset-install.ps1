@@ -281,9 +281,6 @@ function Is-Package-Installed([string]$InstallRoot, [string]$RelativePathToPacka
 }
 
 function Get-Absolute-Path([string]$RelativeOrAbsolutePath) {
-    # Too much spam
-    # Say-Invocation $MyInvocation
-
     return $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($RelativeOrAbsolutePath)
 }
 
@@ -363,7 +360,6 @@ function Extract-Package([string]$ZipPath, [string]$OutPath) {
 
 function DownloadFile([Uri]$Uri, [string]$OutPath) {
     $Stream = $null
-
     try {
         $Response = GetHTTPResponse -Uri $Uri
         $Stream = $Response.Content.ReadAsStreamAsync().Result
