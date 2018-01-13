@@ -86,7 +86,14 @@ function GetVersion([string] $name) {
 function InstallDotNetCli {
   
   Create-Directory $DotNetRoot
-  if ( $dotnetCliVersion -eq "") {
+
+  # Determine DotNetCliVersion from ToolsetVersion.props or from command-line   
+  if ($ToolsetVersionsPropsFile -eq "" -and $dotnetCliVersion -eq "")
+  {
+    Write-Host "Error: Please create ToolsetVersions.props or alternatively explicitly specify '-dotnetcliversion <value>'"
+    exit 1
+  }
+  elseif ( $dotnetCliVersion -eq "") {
     $dotnetCliVersion = GetVersion("DotNetCliVersion")
   }
   else {
@@ -141,8 +148,7 @@ function Stop-Processes() {
 
 function Find-File([string] $directory, [string] $filename) {
   if ($directory -eq "") {
-    Write-Host "Error: Cannot find file '$filename' in any parent directories"
-    exit 1
+    return ""
   }
 
   $file = Join-Path $directory $filename
@@ -169,7 +175,14 @@ try {
   $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = "true"
 
   # Search for the ToolsetVersions.props file in the current or any parent directory
-  [xml]$VersionsXml = Get-Content(Find-File $PSScriptRoot "ToolsetVersions.props")
+  $toolsetVersionsPropsFile = Find-File $PSScriptRoot "ToolsetVersions.props"
+  if($toolsetVersionsPropsFile -eq "")
+  {
+    Write-Host "Cannot find file 'ToolsetVersions.props' in any parent directories."
+  }
+  else {
+    [xml]$VersionsXml = Get-Content($toolsetVersionsPropsFile)
+  }
 
   if ($solution -eq "") {
     $solution = @(gci(Join-Path $RepoRoot "*.sln"))[0]
@@ -186,15 +199,19 @@ try {
     $env:TEMP = $TempDir
     $env:TMP = $TempDir
   }
- 
-  if ( $ToolsetVersion -eq "" ) {
+
+  # Determine toolsetversion either from ToolsetVersion.props or from command-line
+  if ($toolsetVersionsPropsFile -eq "" -and $toolsetversion -eq "")
+  {
+    Write-Host "Error: Please create ToolsetVersions.props or alternatively explicitly specify '-toolsetversion <value>'"
+    exit 1
+  }
+  elseif ( $ToolsetVersion -eq "" ) {
     $ToolsetVersion = GetVersion("RoslynToolsRepoToolsetVersion")
   }
   else {
     Write-Host "Using explicitly specified toolset version '$ToolsetVersion'"
   }
-
-  $ToolsetBuildProj = Join-Path $NuGetPackageRoot "roslyntools.repotoolset\$ToolsetVersion\tools\Build.proj"
 
   if ($addpackage) {
     AddPackageToToolset
@@ -205,6 +222,7 @@ try {
   }
 
   if ($build) {
+    $ToolsetBuildProj = Join-Path $NuGetPackageRoot "roslyntools.repotoolset\$ToolsetVersion\tools\Build.proj"
     Build
   }
   exit $lastExitCode
