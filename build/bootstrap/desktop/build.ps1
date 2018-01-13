@@ -213,11 +213,13 @@ try {
     Write-Host "Using explicitly specified toolset version '$ToolsetVersion'"
   }
 
-  if ($addpackage) {
-    AddPackageToToolset
-  }
   if ($restore) {
     InstallDotNetCli
+    InstallToolset
+  }
+
+  if ($addpackage) {
+    AddPackageToToolset
     InstallToolset
   }
 
