@@ -191,7 +191,7 @@ try {
   if ($env:NUGET_PACKAGES -ne $null) {
     $NuGetPackageRoot = $env:NUGET_PACKAGES.TrimEnd("\") + "\"
   } else {
-    $NuGetPackageRoot = Join-Path $RepoRoot "packages"
+    $NuGetPackageRoot = (Join-Path $RepoRoot "packages") + "\"
   }
 
   if ($ci) {
