@@ -1,6 +1,11 @@
 ﻿<!-- Copyright (c)  Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <ToolsetVersionsPropsFile>$([MSBuild]::GetPathOfFileAbove('ToolsetVersions.props'))</ToolsetVersionsPropsFile>
+  </PropertyGroup>
+  <Import Project="$(ToolsetVersionsPropsFile)" Condition="Exists('$(ToolsetVersionsPropsFile)')" />
+  
+  <PropertyGroup>
     <TargetFramework>net462</TargetFramework>
     <RestoreSources>
       https://dotnet.myget.org/F/roslyn-tools/api/v3/index.json
