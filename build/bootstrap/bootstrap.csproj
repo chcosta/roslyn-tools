@@ -4,6 +4,7 @@
     <TargetFramework>net46</TargetFramework>
     <!-- Temporary source -->
     <RestoreSources>
+      $(RestoreSources);
       E:/gh/chcosta/buildtools/bin/packages;
     </RestoreSources>
     <LayoutFolder>$(ArtifactsObjDir)/bootstrap-layout/</LayoutFolder>
