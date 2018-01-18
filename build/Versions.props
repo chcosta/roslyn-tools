@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), ToolsetVersions.props))\ToolsetVersions.props" />
   <PropertyGroup>
     <!-- This repo version -->
     <VersionBase>1.0.0</VersionBase>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
     
     <!-- Toolset -->
-    <RoslynToolsRepoToolsetVersion>1.0.0-beta-62503-02</RoslynToolsRepoToolsetVersion>
-    <DotNetCliVersion>2.0.2</DotNetCliVersion>
+    <MicrosoftDotNetBuildToolsVersion>2.1.0-prerelease-02410-02</MicrosoftDotNetBuildToolsVersion>
     <VSWhereVersion>2.1.4</VSWhereVersion>
 
     <!-- CoreFX -->

@@ -3,13 +3,16 @@ Param(
   [string] $configuration = "Debug",
   [string] $solution = "",
   [string] $verbosity = "minimal",
+  [string] $dotnetcliversion = "",
+  [string] $toolsetversion = "",
+  [string] $packagename = "",
+  [string] $packageversion = "",
+  [string] $packagesource = "",
+  [switch] $addpackage,
   [switch] $restore,
-  [switch] $deployDeps,
   [switch] $build,
   [switch] $rebuild,
-  [switch] $deploy,
   [switch] $test,
-  [switch] $integrationTest,
   [switch] $sign,
   [switch] $pack,
   [switch] $ci,
@@ -33,12 +36,10 @@ function Print-Usage() {
     Write-Host "  -restore                Restore dependencies"
     Write-Host "  -build                  Build solution"
     Write-Host "  -rebuild                Rebuild solution"
-    Write-Host "  -deploy                 Deploy built VSIXes"
-    Write-Host "  -deployDeps             Deploy dependencies (Roslyn VSIXes for integration tests)"
     Write-Host "  -test                   Run all unit tests in the solution"
-    Write-Host "  -integrationTest        Run all integration tests in the solution"
     Write-Host "  -sign                   Sign build outputs"
     Write-Host "  -pack                   Package build outputs into NuGet packages and Willow components"
+    Write-Host "  -addpackage <arguments> <options>   Add a package to the repo toolset project, see below for arguments and options"
     Write-Host ""
 
     Write-Host "Advanced settings:"
@@ -46,7 +47,17 @@ function Print-Usage() {
     Write-Host "  -ci                     Set when running on CI server"
     Write-Host "  -log                    Enable logging (by default on CI)"
     Write-Host "  -prepareMachine         Prepare machine for CI run"
+    Write-Host "  -dotnetcliversion <value> Specify cli version to restore (defaults to value specified in ToolsetVersion.props)"
+    Write-Host "  -toolsetversion <value> Specify Repo Toolset version to restore (defaults to value specified in ToolsetVersion.props)"
     Write-Host ""
+
+    Write-Host "AddPackage arguments:"
+    Write-Host "  -packagename <value>"
+    Write-Host "  -packageversion <value>"
+    Write-Host "AddPackage options:"
+    Write-Host "  -packagesource <value>"
+    Write-Host ""
+
     Write-Host "Command line arguments not listed above are passed thru to msbuild."
     Write-Host "The above arguments can be shortened as much as to be unambiguous (e.g. -co for configuration, -t for test, etc.)."
 }
@@ -69,37 +80,53 @@ function GetVersion([string] $name) {
     }
   }
 
-  throw "Failed to find $name in Versions.props"
+  throw "Failed to find $name in $VersionsXml"
 }
 
-function LocateVisualStudio {
-  if ($InVSEnvironment) {
-    return Join-Path $env:VS150COMNTOOLS "..\.."
-  }
-
-  $vswhereVersion = GetVersion("VSWhereVersion")
-  $vsWhereDir = Join-Path $ToolsRoot "vswhere\$vswhereVersion"
-  $vsWhereExe = Join-Path $vsWhereDir "vswhere.exe"
+function InstallDotNetCli {
   
-  if (!(Test-Path $vsWhereExe)) {
-    Create-Directory $vsWhereDir
-    Write-Host "Downloading vswhere"
-    Invoke-WebRequest "http://github.com/Microsoft/vswhere/releases/download/$vswhereVersion/vswhere.exe" -OutFile $vswhereExe
+  Create-Directory $DotNetRoot
+
+  # Determine DotNetCliVersion from ToolsetVersion.props or from command-line   
+  if ($ToolsetVersionsPropsFile -eq "" -and $dotnetCliVersion -eq "")
+  {
+    Write-Host "Error: Please create ToolsetVersions.props or alternatively explicitly specify '-dotnetcliversion <value>'"
+    exit 1
+  }
+  elseif ( $dotnetCliVersion -eq "") {
+    $dotnetCliVersion = GetVersion("DotNetCliVersion")
+  }
+  else {
+    Write-Host "Using explicitly specified dotnet cli version '$dotnetCliVersion'"
+  }
+
+  $installScript = "$DotNetRoot\dotnet-install.ps1"
+  if (!(Test-Path $installScript)) { 
+    Invoke-WebRequest "https://raw.githubusercontent.com/dotnet/cli/release/2.0.0/scripts/obtain/dotnet-install.ps1" -OutFile $installScript
   }
   
-  $vsInstallDir = & $vsWhereExe -latest -property installationPath -requires Microsoft.Component.MSBuild -requires Microsoft.VisualStudio.Component.VSSDK -requires Microsoft.Net.Component.4.6.TargetingPack -requires Microsoft.VisualStudio.Component.Roslyn.Compiler -requires Microsoft.VisualStudio.Component.VSSDK
-
-  if (!(Test-Path $vsInstallDir)) {
-    throw "Failed to locate Visual Studio (exit code '$lastExitCode')."
+  & $installScript -Version $dotnetCliVersion -InstallDir $DotNetRoot
+  if ($lastExitCode -ne 0) {
+    throw "Failed to install dotnet cli (exit code '$lastExitCode')."
   }
-
-  return $vsInstallDir
 }
 
+function AddPackageToToolset {
+  if ($packagename -eq "" -Or $packageversion -eq "") {
+    Write-Host "Missing required option 'packagename' or 'packageversion'"
+    exit 1
+  }
+  $restoreArgs = @()
+  if ($packagesource -ne "") {
+    $restoreArgs += "--source"
+    $restoreArgs += $packageSource
+  }
+
+  & $DotNetExe add $ToolsetRestoreProj package $packagename --version $packageversion --package-directory $NuGetPackageRoot $restoreArgs
+
+}
 function InstallToolset {
-  if (!(Test-Path $ToolsetBuildProj)) {
-    & $MsbuildExe $ToolsetRestoreProj /t:restore /m /nologo /clp:None /warnaserror /v:quiet /p:DeployDeps=$deployDeps /p:NuGetPackageRoot=$NuGetPackageRoot /p:BaseIntermediateOutputPath=$ToolsetDir /p:ExcludeRestorePackageImports=true
-  }
+    & $DotNetExe msbuild $ToolsetRestoreProj /t:restore /m /nologo /clp:Summary /warnaserror /v:$verbosity /p:RestorePackagesPath=$NuGetPackageRoot /p:NuGetPackageRoot=$NuGetPackageRoot /p:ExcludeRestorePackageImports=false /p:RoslynToolsRepoToolsetVersion=$ToolsetVersion
 }
 
 function Build {
@@ -109,36 +136,53 @@ function Build {
   } else {
     $logCmd = ""
   }
-
-  $nodeReuse = !$ci
-
-  & $MsbuildExe $ToolsetBuildProj /m /nologo /clp:Summary /nodeReuse:$nodeReuse /warnaserror /v:$verbosity $logCmd /p:Configuration=$configuration /p:SolutionPath=$solution /p:Restore=$restore /p:DeployDeps=$deployDeps /p:Build=$build /p:Rebuild=$rebuild /p:Deploy=$deploy /p:Test=$test /p:IntegrationTest=$integrationTest /p:Sign=$sign /p:Pack=$pack /p:CIBuild=$ci /p:NuGetPackageRoot=$NuGetPackageRoot $properties
+ 
+  & $DotNetExe msbuild $ToolsetBuildProj /m /nologo /clp:Summary /warnaserror /v:$verbosity $logCmd /p:Configuration=$configuration /p:SolutionPath=$solution /p:Restore=$restore /p:Build=$build /p:Rebuild=$rebuild /p:Test=$test /p:Sign=$sign /p:Pack=$pack /p:CIBuild=$ci /p:NuGetPackageRoot=$NuGetPackageRoot $properties
 }
 
 function Stop-Processes() {
   Write-Host "Killing running build processes..."
-  Get-Process -Name "msbuild" -ErrorAction SilentlyContinue | Stop-Process
+  Get-Process -Name "dotnet" -ErrorAction SilentlyContinue | Stop-Process
   Get-Process -Name "vbcscompiler" -ErrorAction SilentlyContinue | Stop-Process
 }
 
-function Clear-NuGetCache() {
-  # clean nuget packages -- necessary to avoid mismatching versions of swix microbuild build plugin and VSSDK on Jenkins
-  $nugetRoot = (Join-Path $env:USERPROFILE ".nuget\packages")
-  if (Test-Path $nugetRoot) {
-    Remove-Item $nugetRoot -Recurse -Force
+function Find-File([string] $directory, [string] $filename) {
+  if ($directory -eq "") {
+    return ""
   }
+
+  $file = Join-Path $directory $filename
+  Write-Host "Looking for file, '$filename' in '$directory'"
+  if (Test-Path $file) {
+    return $file
+  }
+  $directory = Split-Path -Path $directory -Parent
+  return Find-File $directory $filename
 }
 
+
 try {
-  $InVSEnvironment = !($env:VS150COMNTOOLS -eq $null) -and (Test-Path $env:VS150COMNTOOLS)
+
   $RepoRoot = Join-Path $PSScriptRoot "..\"
-  $ToolsRoot = Join-Path $RepoRoot ".tools"
-  $ToolsetRestoreProj = Join-Path $PSScriptRoot "Toolset.proj"
+  $DotNetRoot = Join-Path $RepoRoot ".dotnet"
+  $DotNetExe = Join-Path $DotNetRoot "dotnet.exe"
+  $BuildProj = Join-Path $PSScriptRoot "build.proj"
+  $ToolsetRestoreProj = Join-Path $PSScriptRoot "_Toolset.csproj"
   $ArtifactsDir = Join-Path $RepoRoot "artifacts"
   $ToolsetDir = Join-Path $ArtifactsDir "toolset"
   $LogDir = Join-Path (Join-Path $ArtifactsDir $configuration) "log"
   $TempDir = Join-Path (Join-Path $ArtifactsDir $configuration) "tmp"
-  [xml]$VersionsXml = Get-Content(Join-Path $PSScriptRoot "Versions.props")
+  $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = "true"
+
+  # Search for the ToolsetVersions.props file in the current or any parent directory
+  $toolsetVersionsPropsFile = Find-File $PSScriptRoot "ToolsetVersions.props"
+  if($toolsetVersionsPropsFile -eq "")
+  {
+    Write-Host "Cannot find file 'ToolsetVersions.props' in any parent directories."
+  }
+  else {
+    [xml]$VersionsXml = Get-Content($toolsetVersionsPropsFile)
+  }
 
   if ($solution -eq "") {
     $solution = @(gci(Join-Path $RepoRoot "*.sln"))[0]
@@ -147,39 +191,42 @@ try {
   if ($env:NUGET_PACKAGES -ne $null) {
     $NuGetPackageRoot = $env:NUGET_PACKAGES.TrimEnd("\") + "\"
   } else {
-    $NuGetPackageRoot = Join-Path $env:UserProfile ".nuget\packages\"
+    $NuGetPackageRoot = Join-Path $RepoRoot "packages"
   }
-
-  $ToolsetVersion = GetVersion("RoslynToolsRepoToolsetVersion")
-  $ToolsetBuildProj = Join-Path $NuGetPackageRoot "RoslynTools.RepoToolset\$ToolsetVersion\tools\Build.proj"
-
-  $vsInstallDir = LocateVisualStudio
-  $MsbuildExe = Join-Path $vsInstallDir "MSBuild\15.0\Bin\msbuild.exe"
 
   if ($ci) {
     Create-Directory $TempDir
     $env:TEMP = $TempDir
     $env:TMP = $TempDir
-
-    Write-Host "Using $MsbuildExe"
   }
 
-  if (!$InVSEnvironment) {
-    $env:VS150COMNTOOLS = Join-Path $vsInstallDir "Common7\Tools\"
-    $env:VSSDK150Install = Join-Path $vsInstallDir "VSSDK\"
-    $env:VSSDKInstall = Join-Path $vsInstallDir "VSSDK\"
+  # Determine toolsetversion either from ToolsetVersion.props or from command-line
+  if ($toolsetVersionsPropsFile -eq "" -and $toolsetversion -eq "")
+  {
+    Write-Host "Error: Please create ToolsetVersions.props or alternatively explicitly specify '-toolsetversion <value>'"
+    exit 1
   }
-
-  # Preparation of a CI machine
-  if ($prepareMachine) {
-    Clear-NuGetCache
+  elseif ( $ToolsetVersion -eq "" ) {
+    $ToolsetVersion = GetVersion("RoslynToolsRepoToolsetVersion")
+  }
+  else {
+    Write-Host "Using explicitly specified toolset version '$ToolsetVersion'"
   }
 
   if ($restore) {
+    InstallDotNetCli
     InstallToolset
   }
 
-  Build
+  if ($addpackage) {
+    AddPackageToToolset
+    InstallToolset
+  }
+
+  if ($build) {
+    $ToolsetBuildProj = Join-Path $NuGetPackageRoot "roslyntools.repotoolset\$ToolsetVersion\tools\Build.proj"
+    Build
+  }
   exit $lastExitCode
 }
 catch {
@@ -194,4 +241,3 @@ finally {
     Stop-Processes
   }
 }
-

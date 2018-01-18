@@ -1,0 +1,64 @@
+<!-- Copyright (c)  Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project DefaultTargets="CreateCompressedBootstrapToolset" Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net46</TargetFramework>
+    <!-- Temporary source -->
+    <RestoreSources>
+      E:/gh/chcosta/buildtools/bin/packages;
+    </RestoreSources>
+    <LayoutFolder>$(ArtifactsObjDir)/bootstrap-layout/</LayoutFolder>
+    <ArchiveFolder>$(BaseOutputPath)compressed/</ArchiveFolder>
+    <ExcludeRestorePackageImports>false</ExcludeRestorePackageImports>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- ToDo: grab files directly from repo instead of placing them in the desktop folder (where possible) -->
+    <ArchiveFile Include="$(RepoRoot)build\bootstrap\desktop\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.Build.Tasks.Zip" Version="2.1.0-prerelease-02416-0" />
+  </ItemGroup>
+
+  <!-- Clean -->
+  <Target Name="CleanArchive" 
+          AfterTargets="Clean">
+    <RemoveDir Directories="$(ArchiveFolder);$(LayoutFolder)" />
+  </Target>
+
+  <!-- Build -->  
+  <!-- Create zip files during the Build phase -->
+  <Target Name="CreateCompressedBootstrapToolset" AfterTargets="CoreCompile">
+    <MakeDir Directories="$(ArchiveFolder)" />
+    <Message Importance="High" Text="MSBuildRuntimeType: $(MSBuildRuntimeType)" />
+    <Message Importance="High" Text="_TaskDir: $(_TaskDir)" />
+    <ZipFileCreateFromDirectory 
+      SourceDirectory="$(LayoutFolder)" 
+      DestinationArchive="$(ArchiveFolder)toolset-bootstrap.zip"
+      OverwriteDestination="true"/>
+  </Target>
+
+  <!-- Move bootstrap files to layout folder -->
+  <Target Name="GatherBootstrapFiles" 
+          BeforeTargets="CreateCompressedBootstrapToolset">
+          <MakeDir Directories="$(LayoutFolder)" />
+    <Copy SourceFiles="@(ArchiveFile)"
+          DestinationFolder="$(LayoutFolder)" />
+  </Target>
+
+  <!-- Create version file -->
+  <!-- ToDo: Only applicable to official builds -->
+  <Target Name="CreateVersionFile"
+          BeforeTargets="GatherBootstrapFiles">
+    <MakeDir Directories="$(ArchiveFolder)" />
+    <WriteLinesToFile File="$(ArchiveFolder)latest.version"
+                      Lines="GitShaShouldGoHere;$(Version)"
+                      Overwrite="true" />
+  </Target>
+
+  <!-- Publish (for official builds) -->
+  <Target Name="PushToAzure"
+          AfterTargets="CreateCompressedBootstrapToolset;CreateVersionFile">
+    <Message Importance="High" Text="Publish to azure" />
+  </Target>
+</Project>
