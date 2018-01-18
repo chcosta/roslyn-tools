@@ -72,9 +72,9 @@
                       Overwrite="true" />
   </Target>
 
-  <!-- Publish (for official builds) ToDo: Having this wired into the default build step is probably wrong. It works for now, for testing. -->
+  <!-- Publish (for official builds) -->
+  <!-- This target must be explicitly called. -->
   <Target Name="PushToAzure"
-          AfterTargets="CreateCompressedBootstrapToolset;CreateVersionFile"
           DependsOnTargets="PublishFilesToBlobFeed">
     <Message Importance="High" Text="Publish to azure" />
   </Target>
