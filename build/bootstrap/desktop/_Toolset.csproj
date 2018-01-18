@@ -4,7 +4,9 @@
     <ToolsetVersionsPropsFile>$([MSBuild]::GetPathOfFileAbove('ToolsetVersions.props'))</ToolsetVersionsPropsFile>
   </PropertyGroup>
   <Import Project="$(ToolsetVersionsPropsFile)" Condition="Exists('$(ToolsetVersionsPropsFile)')" />
-  
+
+  <!-- ToDo: Set defaults for some properties like package restore output so that we're not contaminating global state -->
+
   <PropertyGroup>
     <TargetFramework>net462</TargetFramework>
     <RestoreSources>

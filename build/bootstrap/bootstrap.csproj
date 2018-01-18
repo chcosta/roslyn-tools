@@ -47,7 +47,6 @@
   <!-- Create zip files during the Build phase -->
   <Target Name="CreateCompressedBootstrapToolset" AfterTargets="CoreCompile">
     <MakeDir Directories="$(ArchiveFolder)" />
-    <Message Importance="High" Text="MSBuildRuntimeType: $(MSBuildRuntimeType)" />
     <ZipFileCreateFromDirectory 
       SourceDirectory="$(LayoutFolder)" 
       DestinationArchive="$(ArchiveFolder)toolset-bootstrap.zip"
