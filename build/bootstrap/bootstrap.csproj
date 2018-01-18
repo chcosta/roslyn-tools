@@ -8,8 +8,23 @@
     </RestoreSources>
     <LayoutFolder>$(ArtifactsObjDir)/bootstrap-layout/</LayoutFolder>
     <ArchiveFolder>$(BaseOutputPath)compressed/</ArchiveFolder>
-    <ExcludeRestorePackageImports>false</ExcludeRestorePackageImports>
+
+    <!-- Temporary hard-code -->
+    <ExpectedFeedUrl>https://dotnetcli.blob.core.windows.net/chcosta/index.json</ExpectedFeedUrl>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <PushToBlobFeed_Overwrite>true</PushToBlobFeed_Overwrite>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FilesToPublish Include="$(ArchiveFolder)latest.version">
+      <RelativeBlobPath>master/latest.version</RelativeBlobPath>
+    </FilesToPublish>
+    <FilesToPublish Include="$(ArchiveFolder)toolset-bootstrap.zip">
+      <RelativeBlobPath>$(Version)/toolset-bootstrap.zip</RelativeBlobPath>
+    </FilesToPublish>
+  </ItemGroup>
 
   <ItemGroup>
     <!-- ToDo: grab files directly from repo instead of placing them in the desktop folder (where possible) -->
@@ -18,6 +33,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.DotNet.Build.Tasks.Zip" Version="2.1.0-prerelease-02416-0" />
+    <PackageReference Include="Microsoft.DotNet.Build.Tasks.Feed" Version="2.1.0-prerelease-02416-0" />
   </ItemGroup>
 
   <!-- Clean -->
@@ -31,7 +47,6 @@
   <Target Name="CreateCompressedBootstrapToolset" AfterTargets="CoreCompile">
     <MakeDir Directories="$(ArchiveFolder)" />
     <Message Importance="High" Text="MSBuildRuntimeType: $(MSBuildRuntimeType)" />
-    <Message Importance="High" Text="_TaskDir: $(_TaskDir)" />
     <ZipFileCreateFromDirectory 
       SourceDirectory="$(LayoutFolder)" 
       DestinationArchive="$(ArchiveFolder)toolset-bootstrap.zip"
@@ -39,7 +54,7 @@
   </Target>
 
   <!-- Move bootstrap files to layout folder -->
-  <Target Name="GatherBootstrapFiles" 
+  <Target Name="LayoutBootstrapFiles" 
           BeforeTargets="CreateCompressedBootstrapToolset">
           <MakeDir Directories="$(LayoutFolder)" />
     <Copy SourceFiles="@(ArchiveFile)"
@@ -49,16 +64,17 @@
   <!-- Create version file -->
   <!-- ToDo: Only applicable to official builds -->
   <Target Name="CreateVersionFile"
-          BeforeTargets="GatherBootstrapFiles">
+          BeforeTargets="LayoutBootstrapFiles">
     <MakeDir Directories="$(ArchiveFolder)" />
     <WriteLinesToFile File="$(ArchiveFolder)latest.version"
                       Lines="GitShaShouldGoHere;$(Version)"
                       Overwrite="true" />
   </Target>
 
-  <!-- Publish (for official builds) -->
+  <!-- Publish (for official builds) ToDo: Having this wired into the default build step is probably wrong. It works for now, for testing. -->
   <Target Name="PushToAzure"
-          AfterTargets="CreateCompressedBootstrapToolset;CreateVersionFile">
+          AfterTargets="CreateCompressedBootstrapToolset;CreateVersionFile"
+          DependsOnTargets="PublishFilesToBlobFeed">
     <Message Importance="High" Text="Publish to azure" />
   </Target>
 </Project>
