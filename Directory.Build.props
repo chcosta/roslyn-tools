@@ -8,6 +8,13 @@
   <Import Project="build\Versions.props"/>
 
   <PropertyGroup>
+    <RoslynToolsRepoToolsetVersion>1.0.0-beta-62506-01</RoslynToolsRepoToolsetVersion>
+    <MicrosoftDotNetBuildToolsVersion>2.1.0-prerelease-02410-02</MicrosoftDotNetBuildToolsVersion>
+    <DotNetCliVersion>2.0.2</DotNetCliVersion>
+    <VSWhereVersion>2.1.4</VSWhereVersion>
+  </PropertyGroup>
+  
+  <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     
     <SignToolDataPath>$(RepoRoot)build\SignToolData.json</SignToolDataPath>

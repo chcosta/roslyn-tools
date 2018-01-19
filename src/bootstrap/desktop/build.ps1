@@ -164,7 +164,7 @@ function Find-File([string] $directory, [string] $filename) {
 
 try {
 
-  $RepoRoot = Join-Path $PSScriptRoot "..\..\"
+  $RepoRoot = Join-Path $PSScriptRoot "..\"
   $DotNetRoot = Join-Path $RepoRoot ".dotnet"
   $DotNetExe = Join-Path $DotNetRoot "dotnet.exe"
   $BuildProj = Join-Path $PSScriptRoot "build.proj"
