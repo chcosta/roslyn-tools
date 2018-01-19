@@ -7,7 +7,7 @@
       $(RestoreSources);
       E:/gh/chcosta/buildtools/bin/packages;
     </RestoreSources>
-    <LayoutFolder>$(ArtifactsObjDir)/bootstrap/layout/</LayoutFolder>
+    <LayoutFolder>$(ArtifactsObjDir)bootstrap/layout/</LayoutFolder>
     <ArchiveFolder>$(BaseOutputPath)</ArchiveFolder>
 
     <!-- Temporary hard-code -->
@@ -29,7 +29,7 @@
 
   <ItemGroup>
     <!-- ToDo: grab files directly from repo instead of placing them in the desktop folder (where possible) -->
-    <ArchiveFile Include="$(RepoRoot)build\bootstrap\desktop\*" />
+    <ArchiveFile Include="$(MSBuildThisFileDirectory)desktop\*" />
   </ItemGroup>
 
   <ItemGroup>
