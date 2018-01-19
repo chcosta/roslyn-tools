@@ -7,8 +7,8 @@
       $(RestoreSources);
       E:/gh/chcosta/buildtools/bin/packages;
     </RestoreSources>
-    <LayoutFolder>$(ArtifactsObjDir)/bootstrap-layout/</LayoutFolder>
-    <ArchiveFolder>$(BaseOutputPath)compressed/</ArchiveFolder>
+    <LayoutFolder>$(ArtifactsObjDir)/bootstrap/layout/</LayoutFolder>
+    <ArchiveFolder>$(BaseOutputPath)</ArchiveFolder>
 
     <!-- Temporary hard-code -->
     <ExpectedFeedUrl>https://dotnetcli.blob.core.windows.net/chcosta/index.json</ExpectedFeedUrl>
