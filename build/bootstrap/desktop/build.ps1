@@ -220,7 +220,6 @@ try {
 
   if ($addpackage) {
     AddPackageToToolset
-    InstallToolset
   }
 
   if ($build) {
