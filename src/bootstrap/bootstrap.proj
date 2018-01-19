@@ -2,11 +2,6 @@
 <Project DefaultTargets="CreateCompressedBootstrapToolset" Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net46</TargetFramework>
-    <!-- Temporary source -->
-    <RestoreSources>
-      $(RestoreSources);
-      E:/gh/chcosta/buildtools/bin/packages;
-    </RestoreSources>
     <LayoutFolder>$(ArtifactsObjDir)bootstrap/layout/</LayoutFolder>
     <ArchiveFolder>$(BaseOutputPath)</ArchiveFolder>
 
@@ -33,8 +28,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Build.Tasks.Zip" Version="2.1.0-prerelease-02416-0" />
-    <PackageReference Include="Microsoft.DotNet.Build.Tasks.Feed" Version="2.1.0-prerelease-02416-0" />
+    <PackageReference Include="Microsoft.DotNet.Build.Tasks.Zip" Version="2.1.0-prerelease-02418-0" />
+    <PackageReference Include="Microsoft.DotNet.Build.Tasks.Feed" Version="2.1.0-prerelease-02418-0" />
   </ItemGroup>
 
   <!-- Clean -->
