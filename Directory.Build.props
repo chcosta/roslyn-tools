@@ -28,6 +28,7 @@
 
     <RestoreSources>
       $(RestoreSources);
+      https://dotnet.myget.org/F/dotnet-buildtools/api/v3/index.json;
       E:/gh/chcosta/buildtools/bin/packages;
     </RestoreSources>
 
