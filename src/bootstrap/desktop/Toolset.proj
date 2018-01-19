@@ -8,7 +8,6 @@
     </RestoreSources>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Build.Tasks.Feed" Version="2.1.0-prerelease-02416-0" />
     <PackageReference Include="RoslynTools.RepoToolset" Version="$(RoslynToolsRepoToolsetVersion)" />
   </ItemGroup>
   <!-- Only csproj or vbproj files auto-import the target extensions, so explicitly import these files -->
