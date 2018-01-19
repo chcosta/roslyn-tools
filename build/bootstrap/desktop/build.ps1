@@ -47,8 +47,8 @@ function Print-Usage() {
     Write-Host "  -ci                     Set when running on CI server"
     Write-Host "  -log                    Enable logging (by default on CI)"
     Write-Host "  -prepareMachine         Prepare machine for CI run"
-    Write-Host "  -dotnetcliversion <value> Specify cli version to restore (defaults to value specified in ToolsetVersion.props)"
-    Write-Host "  -toolsetversion <value> Specify Repo Toolset version to restore (defaults to value specified in ToolsetVersion.props)"
+    Write-Host "  -dotnetcliversion <value> Specify cli version to restore (defaults to value specified in Directory.Build.props)"
+    Write-Host "  -toolsetversion <value> Specify Repo Toolset version to restore (defaults to value specified in Directory.Build.props)"
     Write-Host ""
 
     Write-Host "AddPackage arguments:"
@@ -87,10 +87,10 @@ function InstallDotNetCli {
   
   Create-Directory $DotNetRoot
 
-  # Determine DotNetCliVersion from ToolsetVersion.props or from command-line   
+  # Determine DotNetCliVersion from Directory.Build.props or from command-line   
   if ($ToolsetVersionsPropsFile -eq "" -and $dotnetCliVersion -eq "")
   {
-    Write-Host "Error: Please create ToolsetVersions.props or alternatively explicitly specify '-dotnetcliversion <value>'"
+    Write-Host "Error: Please define 'DotNetCliVersion' in Directory.Build.props or alternatively explicitly specify '-dotnetcliversion <value>'"
     exit 1
   }
   elseif ( $dotnetCliVersion -eq "") {
@@ -163,11 +163,11 @@ function Find-File([string] $directory, [string] $filename) {
 
 try {
 
-  $RepoRoot = Join-Path $PSScriptRoot "..\"
+  $RepoRoot = Join-Path $PSScriptRoot "..\..\"
   $DotNetRoot = Join-Path $RepoRoot ".dotnet"
   $DotNetExe = Join-Path $DotNetRoot "dotnet.exe"
   $BuildProj = Join-Path $PSScriptRoot "build.proj"
-  $ToolsetRestoreProj = Join-Path $PSScriptRoot "_Toolset.csproj"
+  $ToolsetRestoreProj = Join-Path $PSScriptRoot "Toolset.proj"
   $ArtifactsDir = Join-Path $RepoRoot "artifacts"
   $ToolsetDir = Join-Path $ArtifactsDir "toolset"
   $LogDir = Join-Path (Join-Path $ArtifactsDir $configuration) "log"
@@ -175,10 +175,10 @@ try {
   $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = "true"
 
   # Search for the ToolsetVersions.props file in the current or any parent directory
-  $toolsetVersionsPropsFile = Find-File $PSScriptRoot "ToolsetVersions.props"
+  $toolsetVersionsPropsFile = Find-File $PSScriptRoot "Directory.Build.props"
   if($toolsetVersionsPropsFile -eq "")
   {
-    Write-Host "Cannot find file 'ToolsetVersions.props' in any parent directories."
+    Write-Host "Cannot find file 'Directory.Build.props' in any parent directories."
   }
   else {
     [xml]$VersionsXml = Get-Content($toolsetVersionsPropsFile)
@@ -203,7 +203,7 @@ try {
   # Determine toolsetversion either from ToolsetVersion.props or from command-line
   if ($toolsetVersionsPropsFile -eq "" -and $toolsetversion -eq "")
   {
-    Write-Host "Error: Please create ToolsetVersions.props or alternatively explicitly specify '-toolsetversion <value>'"
+    Write-Host "Error: Please define 'RoslynToolsRepoToolsetVersion' in Directory.Build.props or alternatively explicitly specify '-toolsetversion <value>'"
     exit 1
   }
   elseif ( $ToolsetVersion -eq "" ) {

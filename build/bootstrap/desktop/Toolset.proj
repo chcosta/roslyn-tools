@@ -1,12 +1,6 @@
 ﻿<!-- Copyright (c)  Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <ToolsetVersionsPropsFile>$([MSBuild]::GetPathOfFileAbove('ToolsetVersions.props'))</ToolsetVersionsPropsFile>
-  </PropertyGroup>
-  <Import Project="$(ToolsetVersionsPropsFile)" Condition="Exists('$(ToolsetVersionsPropsFile)')" />
-
   <!-- ToDo: Set defaults for some properties like package restore output so that we're not contaminating global state -->
-
   <PropertyGroup>
     <TargetFramework>net462</TargetFramework>
     <RestoreSources>
@@ -14,6 +8,9 @@
     </RestoreSources>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.Build.Tasks.Feed" Version="2.1.0-prerelease-02416-0" />
     <PackageReference Include="RoslynTools.RepoToolset" Version="$(RoslynToolsRepoToolsetVersion)" />
   </ItemGroup>
+  <!-- Only csproj or vbproj files auto-import the target extensions, so explicitly import these files -->
+  <Import Project="$(MSBuildProjectExtensionsPath)$(MSBuildProjectFile).*.targets" Condition="Exists('$(MSBuildProjectExtensionsPath)')" />
 </Project>
