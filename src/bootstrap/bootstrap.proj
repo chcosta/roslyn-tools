@@ -75,6 +75,6 @@
   <!-- This target must be explicitly called. -->
   <Target Name="PushToAzure"
           DependsOnTargets="PublishFilesToBlobFeed">
-    <Message Importance="High" Text="Publish to azure" />
+    <Message Importance="High" Text="Publish to Azure..." />
   </Target>
 </Project>

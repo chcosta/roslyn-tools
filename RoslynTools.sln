@@ -38,7 +38,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompilerPerfTests", "src\Co
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RoslynTools.BuildTasks", "src\BuildTasks\RoslynTools.BuildTasks.csproj", "{995A02BA-FDE6-46E2-9983-2FAA299676DD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "bootstrap", "build\bootstrap\bootstrap.csproj", "{2CA1F73B-AA35-4234-B255-8A8B5711295B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "bootstrap", "src\bootstrap\bootstrap.proj", "{2CA1F73B-AA35-4234-B255-8A8B5711295B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
