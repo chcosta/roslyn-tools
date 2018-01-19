@@ -28,8 +28,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Build.Tasks.Zip" Version="2.1.0-prerelease-02418-0" />
-    <PackageReference Include="Microsoft.DotNet.Build.Tasks.Feed" Version="2.1.0-prerelease-02418-0" />
+    <PackageReference Include="Microsoft.DotNet.Build.Tasks.Zip" Version="2.1.0-prerelease-02419-0" />
+    <PackageReference Include="Microsoft.DotNet.Build.Tasks.Feed" Version="2.1.0-prerelease-02419-02" />
   </ItemGroup>
 
   <!-- Clean -->
