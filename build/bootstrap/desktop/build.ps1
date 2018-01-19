@@ -120,6 +120,7 @@ function AddPackageToToolset {
   if ($packagesource -ne "") {
     $restoreArgs += "--source"
     $restoreArgs += $packageSource
+    Say "Add a reference to '$packageSource' in your feed sources (NuGet.Config, RestoreSources, etc...) to prevent future Restore issues with the Toolset project"
   }
 
   & $DotNetExe add $ToolsetRestoreProj package $packagename --version $packageversion --package-directory $NuGetPackageRoot $restoreArgs
