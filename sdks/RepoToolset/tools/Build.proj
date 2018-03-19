@@ -35,7 +35,6 @@
 
   <PropertyGroup>
     <_RepoRootOriginal>$(RepoRoot)</_RepoRootOriginal>
-    <RepoRoot>$([System.IO.Path]::GetFullPath('$(RepoRoot)/'))</RepoRoot>
   </PropertyGroup>
 
   <Import Project="BuildTasks.props"/>
@@ -78,7 +77,7 @@
 
   <Target Name="Execute">
     <Error Text="Property 'Projects' must be specified" Condition="'$(Projects)' == ''"/>
-    <Error Text="Property 'RepoRoot' must be specified" Condition="'$(_RepoRootOriginal)' == ''"/>
+    <Error Text="Property 'RepoRoot' must be specified" Condition="'$(RepoRoot)' == ''"/>
 
     <PropertyGroup>
       <_MSBuildCmd Condition="'$(MSBuildRuntimeType)' != 'Core'">"$(MSBuildBinPath)\MSBuild.exe" /nodeReuse:false</_MSBuildCmd>
